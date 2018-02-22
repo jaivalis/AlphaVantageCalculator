@@ -1,5 +1,6 @@
 import abc
 import sqlite3
+import sys
 from datetime import datetime
 
 import pandas as pd
@@ -42,12 +43,10 @@ class PersistenceCalculator(CryptoCalculator):
         c = self.conn.cursor()
         c.execute('Select * from data')
     
-        all_rows = c.fetchall()
-    
         week_sum = 0
         days_in_week = 1
         date_str = ''
-        for row in all_rows:
+        for row in c.fetchall():
             date = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
 
             week_sum += row[1]
@@ -66,16 +65,28 @@ class PersistenceCalculator(CryptoCalculator):
         return pd.DataFrame(rows_list)
     
     def greatest_rel_span(self):
+        date_ret = ''
+        c = self.conn.cursor()
+        c.execute('Select * from data')
         
+        max_rel_span = 0
+        week_min = sys.maxsize
+        week_max = 0
+        for row in c.fetchall():
+            date = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
+    
+            week_min = min(week_min, row[1])
+            week_max = max(week_max, row[1])
+            if date.weekday() == 0:
+                rel_span = (week_max - week_min) / week_min
+                
+                max_rel_span = max(max_rel_span, rel_span)
+                if max_rel_span == rel_span:
+                    date_ret = date.strftime('%Y-%m-%d')
+                week_min = sys.maxsize
+                week_max = 0
+        return date_ret
         
-        return None
-        
-    def __enter__(self):
-        self.conn = sqlite3.connect('sqlite:///crypto.db')
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()
-
 
 class InMemoryCalculator(CryptoCalculator):
     output_file = 'data.csv'
@@ -100,3 +111,4 @@ mem.output_weekly_averages('inmem')
 per.output_weekly_averages('fromdb')
 
 print(mem.greatest_rel_span())
+print(per.greatest_rel_span())
