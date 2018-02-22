@@ -9,3 +9,6 @@ docker build -t deliveryQuiz
 docker run --env-file=FILE
 ~~~
 `FILE` should contain the `API_KEY` entry
+
+## Future work
+Testing :see_no_evil:
