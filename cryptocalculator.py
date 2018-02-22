@@ -1,4 +1,5 @@
 import abc
+import logging
 import sqlite3
 import sys
 from datetime import datetime
@@ -101,14 +102,28 @@ class InMemoryCalculator(CryptoCalculator):
         weekly_max = self.df.groupby(pd.Grouper(freq='W-MON')).max()
     
         relative_spans = (weekly_max - weekly_min) / weekly_min
-        return relative_spans['close'].idxmax()
-    
-    
-mem = InMemoryCalculator()
-per = PersistenceCalculator()
+        return relative_spans['close'].idxmax().strftime('%Y-%m-%d')
 
-mem.output_weekly_averages('inmem')
-per.output_weekly_averages('fromdb')
 
-print(mem.greatest_rel_span())
-print(per.greatest_rel_span())
+if __name__ == '__main__':
+    
+    mem = InMemoryCalculator()
+    per = PersistenceCalculator()
+    
+    logging.info('Outputting weekly averages for in memory calculations...')
+    mem.output_weekly_averages('inmem')
+    logging.info('Done.')
+    
+    logging.info('Outputting weekly averages from db calculations...')
+    per.output_weekly_averages('fromdb')
+    logging.info('Done.')
+
+    logging.info('Calculating relative span in memory...')
+    rel_span = mem.greatest_rel_span()
+    logging.info('Done.')
+    print('[from memory] The biggest relative span is: ' + rel_span)
+
+    logging.info('Calculating relative span from db...')
+    rel_span = per.greatest_rel_span()
+    logging.info('Done.')
+    print('[from db] The biggest relative span is: ' + per.greatest_rel_span())
