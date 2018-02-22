@@ -1,7 +1,7 @@
 from alpha_vantage.cryptocurrencies import CryptoCurrencies
 
 import os
-
+import pandas as pd
 
 API_KEY = os.environ['API_KEY']
 
@@ -20,6 +20,7 @@ def fetch_daily_btc_closing_prices():
         df, meta_data = cc.get_digital_currency_daily(symbol='BTC', market='USD')
         df = df.filter(['4a. close (USD)'])
         df = df.rename(columns={'4a. close (USD)': 'close'})
+        df.index = pd.to_datetime(df.index, format='%Y-%m-%d')
         print("[DONE]")
     
     return df
