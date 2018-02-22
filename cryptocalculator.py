@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from cryptoqueries import fetch_daily_btc_closing_prices
+from cryptoqueries import fetch_daily_btc_closing_prices, CLOSE_COLUMN_NAME_CLEAN
 
 
 class CryptoCalculator(object, metaclass=abc.ABCMeta):
@@ -94,7 +94,7 @@ class InMemoryCalculator(CryptoCalculator):
     
     def calculate_weekly_averages(self):
         weekly_avg = self.df.groupby(pd.Grouper(freq='W-MON')).mean()
-        weekly_avg = weekly_avg.rename(columns={'close': 'weekly average'})
+        weekly_avg = weekly_avg.rename(columns={CLOSE_COLUMN_NAME_CLEAN: 'weekly average'})
         return weekly_avg
 
     def greatest_rel_span(self):
@@ -102,7 +102,7 @@ class InMemoryCalculator(CryptoCalculator):
         weekly_max = self.df.groupby(pd.Grouper(freq='W-MON')).max()
     
         relative_spans = (weekly_max - weekly_min) / weekly_min
-        return relative_spans['close'].idxmax().strftime('%Y-%m-%d')
+        return relative_spans[CLOSE_COLUMN_NAME_CLEAN].idxmax().strftime('%Y-%m-%d')
 
 
 if __name__ == '__main__':
@@ -111,11 +111,11 @@ if __name__ == '__main__':
     per = PersistenceCalculator()
     
     logging.info('Outputting weekly averages for in memory calculations...')
-    mem.output_weekly_averages('inmem')
+    mem.output_weekly_averages('./outputs/inmem')
     logging.info('Done.')
     
     logging.info('Outputting weekly averages from db calculations...')
-    per.output_weekly_averages('fromdb')
+    per.output_weekly_averages('./outputs/fromdb')
     logging.info('Done.')
 
     logging.info('Calculating relative span in memory...')
