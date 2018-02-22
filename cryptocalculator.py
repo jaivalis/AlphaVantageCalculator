@@ -1,14 +1,20 @@
 import abc
 
+import pandas as pd
+
+from cryptoqueries import fetch_daily_btc_closing_prices
+
 
 class CryptoCalculator(object, metaclass=abc.ABCMeta):
     
     def __init__(self):
         """ Queries the AV API for data which is stored in a pandas DataFrame. """
-        self.df = []
+        self.df = fetch_daily_btc_closing_prices()
+        print(self.df)
     
     @abc.abstractmethod
-    def get_weekly_average(self, start_date):
+    def output_weekly_averages(self):
+        """ Stores weekly averages to csv file. """
         pass
     
     @abc.abstractmethod
@@ -29,13 +35,13 @@ class CryptoCalculator(object, metaclass=abc.ABCMeta):
 
 class PersistenceCalculator(CryptoCalculator):
     """ Uses SQLAlchemy to persist the DataFrame to a sqlite db. """
-    
+
     def __init__(self):
         super(PersistenceCalculator, self).__init__()
         
         # handle db connection.
     
-    def get_weekly_average(self):
+    def output_weekly_averages(self):
         return None
     
     def day_high_low(self):
@@ -49,8 +55,11 @@ class PersistenceCalculator(CryptoCalculator):
 class InMemoryCalculator(CryptoCalculator):
     output_file = 'data.csv'
     
-    def get_weekly_average(self):
-        return None
+    def output_weekly_averages(self):
+        self.df.index = pd.to_datetime(self.df.index, format='%Y-%m-%d')
+        weekly_avg = self.df.groupby(pd.Grouper(freq='W-MON')).mean()
+        weekly_avg = weekly_avg.rename(columns={'close': 'weekly average'})
+        weekly_avg.to_csv('out.csv')
     
     def day_high_low(self):
         return None
@@ -62,4 +71,6 @@ class InMemoryCalculator(CryptoCalculator):
 
 mem = InMemoryCalculator()
 per = PersistenceCalculator()
+
+print(mem.output_weekly_averages())
 
