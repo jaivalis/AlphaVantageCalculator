@@ -5,8 +5,8 @@ In order to run this you need to define your AlphaVantage API key in the environ
 To unpack and run:
 ~~~
 cd build
-docker build -t deliveryQuiz
-docker run deliveryQuiz --env-file=FILE
+docker build -t deliveryquiz .
+docker run --env-file=FILE deliveryquiz --env-file=FILE
 ~~~
 `FILE` should contain the `API_KEY` entry
 
