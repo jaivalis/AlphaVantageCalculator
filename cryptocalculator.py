@@ -25,10 +25,6 @@ class CryptoCalculator(object, metaclass=abc.ABCMeta):
     def greatest_rel_span(self):
         pass
     
-    @abc.abstractmethod
-    def store_data(self):
-        pass
-
 
 class PersistenceCalculator(CryptoCalculator):
     """ Uses SQLAlchemy to persist the DataFrame to a sqlite db. """
@@ -70,12 +66,10 @@ class PersistenceCalculator(CryptoCalculator):
         return pd.DataFrame(rows_list)
     
     def greatest_rel_span(self):
+        
+        
         return None
-    
-    def store_data(self):
-        """ Stores to sqlite db. """
-        pass
-    
+        
     def __enter__(self):
         self.conn = sqlite3.connect('sqlite:///crypto.db')
         
@@ -92,16 +86,17 @@ class InMemoryCalculator(CryptoCalculator):
         return weekly_avg
 
     def greatest_rel_span(self):
-        return None
+        weekly_min = self.df.groupby(pd.Grouper(freq='W-MON')).min()
+        weekly_max = self.df.groupby(pd.Grouper(freq='W-MON')).max()
     
-    def store_data(self):
-        """ Stores to CSV file. """
-        pass
-
-
+        relative_spans = (weekly_max - weekly_min) / weekly_min
+        return relative_spans['close'].idxmax()
+    
+    
 mem = InMemoryCalculator()
 per = PersistenceCalculator()
 
-print(mem.output_weekly_averages('inmem'))
-print(per.output_weekly_averages('fromdb'))
+mem.output_weekly_averages('inmem')
+per.output_weekly_averages('fromdb')
 
+print(mem.greatest_rel_span())
