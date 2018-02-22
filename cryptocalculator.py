@@ -17,10 +17,9 @@ class CryptoCalculator(object, metaclass=abc.ABCMeta):
     def calculate_weekly_averages(self):
         pass
     
-    @abc.abstractmethod
-    def output_weekly_averages(self):
-        """ Stores weekly averages to csv file. """
-        pass
+    def output_weekly_averages(self, fname):
+        weekly_avg = self.calculate_weekly_averages()
+        weekly_avg.to_csv(fname + '.csv')
     
     @abc.abstractmethod
     def greatest_rel_span(self):
@@ -70,10 +69,6 @@ class PersistenceCalculator(CryptoCalculator):
     
         return pd.DataFrame(rows_list)
     
-    def output_weekly_averages(self):
-        weekly_avg = self.calculate_weekly_averages()
-        weekly_avg.to_csv('out-indb.csv')
-    
     def greatest_rel_span(self):
         return None
     
@@ -95,11 +90,7 @@ class InMemoryCalculator(CryptoCalculator):
         weekly_avg = self.df.groupby(pd.Grouper(freq='W-MON')).mean()
         weekly_avg = weekly_avg.rename(columns={'close': 'weekly average'})
         return weekly_avg
-        
-    def output_weekly_averages(self):
-        weekly_avg = self.calculate_weekly_averages()
-        weekly_avg.to_csv('out-inmem.csv')
-    
+
     def greatest_rel_span(self):
         return None
     
@@ -111,6 +102,6 @@ class InMemoryCalculator(CryptoCalculator):
 mem = InMemoryCalculator()
 per = PersistenceCalculator()
 
-print(mem.output_weekly_averages())
-print(per.output_weekly_averages())
+print(mem.output_weekly_averages('inmem'))
+print(per.output_weekly_averages('fromdb'))
 
