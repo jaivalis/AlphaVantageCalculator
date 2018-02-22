@@ -6,7 +6,7 @@ To unpack and run:
 ~~~
 cd build
 docker build -t deliveryQuiz
-docker run --env-file=FILE
+docker run deliveryQuiz --env-file=FILE
 ~~~
 `FILE` should contain the `API_KEY` entry
 
