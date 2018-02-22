@@ -6,14 +6,14 @@ from datetime import datetime
 
 import pandas as pd
 
-from cryptoqueries import fetch_daily_btc_closing_prices, CLOSE_COLUMN_NAME_CLEAN
+from cryptofetcher import CryptoFetcher, CLOSE_COLUMN_NAME_CLEAN
 
 
 class CryptoCalculator(object, metaclass=abc.ABCMeta):
     
-    def __init__(self):
+    def __init__(self, df):
         """ Queries the AV API for data which is stored in a pandas DataFrame. """
-        self.df = fetch_daily_btc_closing_prices()
+        self.df = df
     
     @abc.abstractmethod
     def calculate_weekly_averages(self):
@@ -31,8 +31,8 @@ class CryptoCalculator(object, metaclass=abc.ABCMeta):
 class PersistenceCalculator(CryptoCalculator):
     """ Uses SQLAlchemy to persist the DataFrame to a sqlite db. """
 
-    def __init__(self):
-        super(PersistenceCalculator, self).__init__()
+    def __init__(self, df):
+        super(PersistenceCalculator, self).__init__(df)
         
         # handle db connection
         self.conn = sqlite3.connect(':memory:')
@@ -107,15 +107,17 @@ class InMemoryCalculator(CryptoCalculator):
 
 if __name__ == '__main__':
     
-    mem = InMemoryCalculator()
-    per = PersistenceCalculator()
+    fetcher = CryptoFetcher()
+    
+    mem = InMemoryCalculator(fetcher.df)
+    per = PersistenceCalculator(fetcher.df)
     
     logging.info('Outputting weekly averages for in memory calculations...')
-    mem.output_weekly_averages('./outputs/inmem')
+    mem.output_weekly_averages('inmem')
     logging.info('Done.')
     
     logging.info('Outputting weekly averages from db calculations...')
-    per.output_weekly_averages('./outputs/fromdb')
+    per.output_weekly_averages('fromdb')
     logging.info('Done.')
 
     logging.info('Calculating relative span in memory...')
