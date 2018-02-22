@@ -1,8 +1,9 @@
 import abc
-
-import pandas as pd
 import sqlite3
 from datetime import datetime
+
+import pandas as pd
+
 from cryptoqueries import fetch_daily_btc_closing_prices
 
 
@@ -65,7 +66,7 @@ class PersistenceCalculator(CryptoCalculator):
                 days_in_week = 0
             days_in_week += 1
         if week_sum != 0:
-            rows_list.append({'date': date_str, 'average': (week_sum / days_in_week - 1)})
+            rows_list.append({'date': date_str, 'average': week_sum / (days_in_week-1)})
     
         return pd.DataFrame(rows_list)
     
