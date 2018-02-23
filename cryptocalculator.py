@@ -2,7 +2,7 @@ import abc
 import logging
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 
@@ -87,7 +87,53 @@ class PersistenceCalculator(CryptoCalculator):
                 week_min = sys.maxsize
                 week_max = 0
         return date_ret
+
+
+class PersistenceCalculatorActual(CryptoCalculator):
+    """ Uses SQLAlchemy to persist the DataFrame to a sqlite db. """
+    
+    def __init__(self, df):
+        super(PersistenceCalculatorActual, self).__init__(df)
         
+        # handle db connection
+        self.conn = sqlite3.connect('./trash.db')
+        
+        self.conn.cursor().execute('''DROP TABLE IF EXISTS data;''')
+        self.df.to_sql('data', self.conn, index=True)
+        
+        self.append_date_column()
+        self.populate_date_column()
+        
+    def append_date_column(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''ALTER TABLE data ADD COLUMN week_num integer;''')
+        
+    def populate_date_column(self):
+        starting_date = self.df.index[0]
+    
+        days_updated = 0
+        week_num = 1
+    
+        cursor = self.conn.cursor()
+    
+        query = '''UPDATE data SET week_num = ? WHERE date > ? and date < ?;'''
+        while days_updated < self.df[CLOSE_COLUMN_NAME_CLEAN].count():
+            end_date = starting_date + timedelta(days=7)
+            cursor.execute(query, (week_num, starting_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+            # cursor.execute(query, (week_num, '2014-01-01', '2016-01-01'))
+            
+            print(cursor.fetchone())
+            
+            starting_date = end_date
+            days_updated += 7
+            week_num += 1
+    
+    def calculate_weekly_averages(self):
+        pass
+    
+    def greatest_rel_span(self):
+        pass
+
 
 class InMemoryCalculator(CryptoCalculator):
     output_file = 'data.csv'
@@ -110,7 +156,7 @@ if __name__ == '__main__':
     fetcher = CryptoFetcher()
     
     mem = InMemoryCalculator(fetcher.df)
-    per = PersistenceCalculator(fetcher.df)
+    per = PersistenceCalculatorActual(fetcher.df)
     
     logging.info('Outputting weekly averages for in memory calculations...')
     mem.output_weekly_averages('inmem')
